@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "datamask"
+version = "0.1.0"
+description = "An open-source toolkit to discover and mask sensitive data in any database."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [{ name = "datamask contributors" }]
+keywords = ["data-masking", "pii", "anonymization", "etl", "privacy", "gdpr"]
+
+# Core dependencies are intentionally light. Database drivers and LLM SDKs are
+# optional extras so users only install what they actually need.
+dependencies = [
+    "SQLAlchemy>=2.0",
+    "PyYAML>=6.0",
+    "click>=8.1",
+]
+
+[project.optional-dependencies]
+# Database drivers (install the one(s) you need)
+postgres = ["psycopg2-binary>=2.9"]
+mysql = ["PyMySQL>=1.1"]
+mssql = ["pyodbc>=5.0"]
+oracle = ["oracledb>=2.0"]
+# everything-database meta extra
+databases = ["psycopg2-binary>=2.9", "PyMySQL>=1.1", "pyodbc>=5.0", "oracledb>=2.0"]
+
+# LLM providers
+openai = ["openai>=1.0", "tiktoken>=0.5"]
+local = ["requests>=2.31"]
+
+# Convenience: install everything
+all = [
+    "psycopg2-binary>=2.9", "PyMySQL>=1.1", "pyodbc>=5.0", "oracledb>=2.0",
+    "openai>=1.0", "tiktoken>=0.5", "requests>=2.31",
+]
+
+dev = ["pytest>=7.4", "pytest-cov>=4.1"]
+
+[project.scripts]
+datamask = "datamask.cli:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+datamask = ["masking/dictionaries/data/*.txt"]

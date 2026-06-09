@@ -1,0 +1,130 @@
+# ============================================================================
+# datamask configuration (example)
+# ----------------------------------------------------------------------------
+# Copy to config/datamask.config.yaml and edit. Secrets can use ${ENV_VAR} placeholders
+# so you never commit real credentials, e.g. password: ${DB_PASSWORD}
+# A default can be given with ${ENV_VAR:default}.
+# ============================================================================
+
+# --- 1. The database you want to scan / mask --------------------------------
+# Works with ANY SQLAlchemy-supported database. Either give a full `url` ...
+database:
+  # url: "postgresql+psycopg2://user:${DB_PASSWORD}@localhost:5432/mydb"
+
+  # ... or the parts and datamask builds the URL for you:
+  dialect: postgresql        # postgresql | mysql | mssql | oracle | sqlite | ...
+  driver: psycopg2           # optional driver (psycopg2, pymysql, pyodbc, oracledb)
+  host: localhost
+  port: 5432
+  username: myuser
+  password: ${DB_PASSWORD}
+  database: mydb
+  name: mydb                 # logical name used in reports/history
+  schemas: []                # empty = all visible schemas, or e.g. ["public", "sales"]
+  connect_args: {}           # extra kwargs passed to SQLAlchemy create_engine
+
+# --- 2. Detection tuning ----------------------------------------------------
+detection:
+  sample_size: 100           # rows sampled per column for pattern matching
+  use_patterns: true
+  use_history: true
+  overrides_file: config/datamask.fields.yaml   # manual sensitive toggles (#4)
+  # Optional: skip columns/tables purely by name (regex, case-insensitive).
+  # Left empty by default — these are NOT the company-specific rules from the
+  # old script; add your own only if you want name-based skipping.
+  skip_column_patterns: []   # e.g. [".*_id$", "^created_at$", "^updated_at$"]
+  skip_table_patterns: []    # e.g. ["^tmp_", "_bkp$", "^audit_"]
+
+# --- 3. Historical decision store (#2) --------------------------------------
+# Past decisions are reused so masking stays consistent and runs get faster.
+history:
+  enabled: true
+  url: "sqlite:///datamask_history.db"   # any SQLAlchemy URL works
+
+# --- 4. LLM fallback (#4) — only used when patterns/history are inconclusive -
+# No corporate wrapper needed: talk to OpenAI directly, an OpenAI-compatible
+# gateway, or a fully local model (Ollama / LM Studio).
+llm:
+  enabled: false
+  provider: openai           # openai | local
+  model: gpt-4o-mini
+  api_key: ${OPENAI_API_KEY}
+  base_url:                  # set for Azure/OpenRouter/local; leave blank for OpenAI
+  temperature: 0.0
+  max_tokens_budget: 1000000 # hard stop to control cost
+  sample_size: 50            # distinct values sent to the model per column
+  timeout: 60
+
+  # Example local setup (Ollama):
+  # enabled: true
+  # provider: local
+  # model: llama3
+  # base_url: http://localhost:11434
+
+# --- 5. Masking / ETL (#5) --------------------------------------------------
+masking:
+  dry_run: true              # preview only; set false (or use `mask --apply`) to write
+  seed: datamask             # deterministic seed -> consistent, repeatable masking
+  default_strategy: format_random   # used when a rule has no explicit mapping
+
+  # (A) HIGHEST priority — decide the strategy for a SPECIFIC column yourself.
+  # This is where you choose, e.g., to BLANK a long free-text note instead of
+  # randomizing it. Keys can be "column", "table.column" or "schema.table.column".
+  column_strategies:
+    notes: blank             # wipe long notes to empty string
+    comments: blank
+    description: redact       # keep length, hide content with ****
+    # public.users.bio: null  # set this exact column to SQL NULL
+
+  # (B) Map a detected rule -> a masking strategy (applies to every column with
+  # that rule). Run `datamask strategies` to list available strategies.
+  rule_strategies:
+    email: fake_email
+    full_name: fake_name
+    first_name: fake_first_name
+    last_name: fake_last_name
+    city: fake_city
+    phone: format_random
+    ssn: format_random
+    credit_card: format_random
+    address: redact
+    # Want to wipe a field entirely instead? Use null or blank:
+    # password: null      # -> sets the column to SQL NULL
+    # notes: blank        # -> sets the column to an empty string
+
+# --- 6. Source database (only needed for `datamask validate`) ---------------
+# Validation compares the MASKED database (section 1 above, the "target") against
+# the ORIGINAL, pre-masking database (this "source"). Same format as section 1.
+# Leave blank if you don't use the validate command.
+source_database:
+  # url: "postgresql+psycopg2://user:${DB_PASSWORD}@prod-host:5432/mydb"
+  dialect: postgresql
+  driver: psycopg2
+  host: source-host
+  port: 5432
+  username: myuser
+  password: ${SOURCE_DB_PASSWORD}
+  database: mydb
+  name: mydb_source
+  schemas: []
+
+# --- 7. Validation (post-masking verification) ------------------------------
+# Answers "did masking actually work?" with three independent checks.
+validation:
+  enabled: true
+  check_row_counts: true          # #1 source & target must have equal row counts
+  check_schema_elements: true     # #2 columns/PK/indexes/FKs/constraints must match
+  check_masking_completeness: true # #3 row-based "is everything really masked?" check
+
+  # Masking-completeness tuning (the row-based check):
+  distinct_value_limit: 5000      # distinct values pulled per column to find overlaps
+  max_common_values: 100          # how many overlapping values to drill into
+  max_rows_per_value: 50          # rows fetched per value on each side
+  unmasked_evidence_threshold: 10 # stop a column early after this many bad rows
+  ignore_test_data: true          # skip noise like 'test', 'n/a', single chars
+
+  # Which sensitive columns to run check #3 on. Leave empty to auto-discover
+  # from the history store (preferred) or a fresh scan of the target.
+  columns: []
+    # - public.customers.full_name
+    # - public.customers.email

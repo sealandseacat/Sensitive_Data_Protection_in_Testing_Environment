@@ -1,0 +1,70 @@
+"""Detection result types shared across the whole pipeline."""
+from __future__ import annotations
+
+from dataclasses import dataclass, field, asdict
+from datetime import datetime, timezone
+from enum import Enum
+from typing import Any, Optional
+
+
+class Sensitivity(str, Enum):
+    """Whether a column is considered sensitive."""
+
+    SENSITIVE = "sensitive"
+    NOT_SENSITIVE = "not_sensitive"
+    UNKNOWN = "unknown"
+
+
+@dataclass
+class Decision:
+    """The outcome of analyzing a single column.
+
+    Attributes
+    ----------
+    database, schema, table, column:
+        Fully-qualified location of the analyzed column.
+    sensitivity:
+        Whether the column is sensitive.
+    rule:
+        The masking/scrambling rule to apply (e.g. ``"email"``, ``"full_name"``,
+        ``"null"``). ``None`` when the column is not sensitive.
+    source:
+        Which layer made the decision: ``history``, ``override``, ``pattern``
+        or ``llm``. Useful for auditing and debugging.
+    confidence:
+        0.0 - 1.0 score. Pattern/override layers tend to be high confidence;
+        LLM confidence is reported when available.
+    detail:
+        Free-form human-readable explanation.
+    token_usage:
+        Tokens consumed if an LLM was used (0 otherwise).
+    decided_at:
+        UTC timestamp of the decision.
+    """
+
+    database: str
+    schema: str
+    table: str
+    column: str
+    sensitivity: Sensitivity = Sensitivity.UNKNOWN
+    rule: Optional[str] = None
+    source: str = "unknown"
+    confidence: float = 0.0
+    detail: str = ""
+    token_usage: int = 0
+    decided_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+    @property
+    def is_sensitive(self) -> bool:
+        return self.sensitivity == Sensitivity.SENSITIVE
+
+    @property
+    def key(self) -> str:
+        """Stable identity for this column across runs."""
+        return f"{self.database}.{self.schema}.{self.table}.{self.column}".lower()
+
+    def to_dict(self) -> dict[str, Any]:
+        d = asdict(self)
+        d["sensitivity"] = self.sensitivity.value
+        d["decided_at"] = self.decided_at.isoformat()
+        return d

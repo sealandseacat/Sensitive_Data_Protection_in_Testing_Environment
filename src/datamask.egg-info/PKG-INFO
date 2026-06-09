@@ -1,0 +1,43 @@
+Metadata-Version: 2.4
+Name: datamask
+Version: 0.1.0
+Summary: An open-source toolkit to discover and mask sensitive data in any database.
+Author: datamask contributors
+License: MIT
+Keywords: data-masking,pii,anonymization,etl,privacy,gdpr
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: SQLAlchemy>=2.0
+Requires-Dist: PyYAML>=6.0
+Requires-Dist: click>=8.1
+Provides-Extra: postgres
+Requires-Dist: psycopg2-binary>=2.9; extra == "postgres"
+Provides-Extra: mysql
+Requires-Dist: PyMySQL>=1.1; extra == "mysql"
+Provides-Extra: mssql
+Requires-Dist: pyodbc>=5.0; extra == "mssql"
+Provides-Extra: oracle
+Requires-Dist: oracledb>=2.0; extra == "oracle"
+Provides-Extra: databases
+Requires-Dist: psycopg2-binary>=2.9; extra == "databases"
+Requires-Dist: PyMySQL>=1.1; extra == "databases"
+Requires-Dist: pyodbc>=5.0; extra == "databases"
+Requires-Dist: oracledb>=2.0; extra == "databases"
+Provides-Extra: openai
+Requires-Dist: openai>=1.0; extra == "openai"
+Requires-Dist: tiktoken>=0.5; extra == "openai"
+Provides-Extra: local
+Requires-Dist: requests>=2.31; extra == "local"
+Provides-Extra: all
+Requires-Dist: psycopg2-binary>=2.9; extra == "all"
+Requires-Dist: PyMySQL>=1.1; extra == "all"
+Requires-Dist: pyodbc>=5.0; extra == "all"
+Requires-Dist: oracledb>=2.0; extra == "all"
+Requires-Dist: openai>=1.0; extra == "all"
+Requires-Dist: tiktoken>=0.5; extra == "all"
+Requires-Dist: requests>=2.31; extra == "all"
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4; extra == "dev"
+Requires-Dist: pytest-cov>=4.1; extra == "dev"
+Dynamic: license-file

@@ -1,0 +1,2 @@
+[console_scripts]
+datamask = datamask.cli:cli

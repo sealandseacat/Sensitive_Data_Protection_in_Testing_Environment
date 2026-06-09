@@ -1,0 +1,37 @@
+# ============================================================================
+# Manual field overrides (requirement #4: "toggle which fields are sensitive")
+# ----------------------------------------------------------------------------
+# Anything listed here OVERRIDES the automatic detection (patterns/LLM/history).
+# Match targets, most specific first:
+#   - "schema.table.column"   exact column
+#   - "table.column"          column in any schema
+#   - "column"                that column name anywhere
+#   - "pattern:glob"          glob on the column name (e.g. pattern:*_ssn)
+# ============================================================================
+
+# Force these to be treated as SENSITIVE (optionally pin the masking rule):
+sensitive:
+  - match: "public.customers.email"
+    rule: email
+    note: "Primary contact email"
+
+  - match: "ssn"                 # any column literally named 'ssn'
+    rule: ssn
+
+  - match: "pattern:*_password"  # anything ending in _password
+    rule: redact
+
+  - match: "hr.employees.salary"
+    rule: format_random
+    note: "Comp data is confidential"
+
+  # Shorthand: a bare string defaults to sensitive with no fixed rule
+  # (detection still picks a rule, but the column is guaranteed sensitive).
+  - "date_of_birth"
+
+# Force these to be treated as NOT sensitive (never masked), even if a pattern
+# or the LLM would flag them:
+not_sensitive:
+  - match: "public.orders.order_number"
+    note: "Looks like an ID but is safe to keep"
+  - "internal_status_code"

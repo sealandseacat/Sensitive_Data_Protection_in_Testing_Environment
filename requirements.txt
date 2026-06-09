@@ -1,0 +1,15 @@
+# Core
+SQLAlchemy>=2.0
+PyYAML>=6.0
+click>=8.1
+
+# --- Optional database drivers (uncomment what you need) ---
+# psycopg2-binary>=2.9      # PostgreSQL
+# PyMySQL>=1.1              # MySQL / MariaDB
+# pyodbc>=5.0              # SQL Server
+# oracledb>=2.0            # Oracle
+
+# --- Optional LLM providers ---
+# openai>=1.0              # OpenAI / Azure OpenAI / any OpenAI-compatible endpoint
+# tiktoken>=0.5           # token counting for OpenAI
+# requests>=2.31          # local / self-hosted HTTP LLMs (Ollama, LM Studio, etc.)

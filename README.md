@@ -1,4 +1,4 @@
-# datamask
+# Sensitive_Data_Protection_in_Testing_Environment
 
 **Discover and mask sensitive data in any database — open source, for everyone.**
 

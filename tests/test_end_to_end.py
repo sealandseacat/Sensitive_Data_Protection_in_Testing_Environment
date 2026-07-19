@@ -118,3 +118,38 @@ def test_null_and_blank_strategies():
     ctx = MaskContext(column="x", rule=None, seed="s")
     assert get_strategy("null")("anything", ctx) is None
     assert get_strategy("blank")("anything", ctx) == ""
+
+
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        "fake_name",
+        "fake_first_name",
+        "fake_last_name",
+        "fake_city",
+        "fake_email",
+        "format_random",
+        "shuffle",
+        "redact",
+    ],
+)
+def test_null_input_stays_null(strategy):
+    """A missing value must stay missing — masking changes data, never invents it.
+
+    Regression: fake_city/fake_first_name/fake_last_name used to turn a NULL
+    into a fabricated value (None -> 'San Jose'), which both misrepresents the
+    source data and skews NULL counts in the masked copy.
+    """
+    ctx = MaskContext(column="x", rule=None, seed="s")
+    assert get_strategy(strategy)(None, ctx) is None
+
+
+def test_registered_dictionary_strategy_preserves_null():
+    from datamask.masking.dictionaries import register_dictionary
+    from datamask.masking.rules import make_dictionary_strategy
+
+    register_dictionary("countries", ["France", "Japan", "Brazil"])
+    strategy = make_dictionary_strategy("countries")
+    ctx = MaskContext(column="x", rule=None, seed="s")
+    assert strategy(None, ctx) is None
+    assert strategy("Germany", ctx) in {"France", "Japan", "Brazil"}

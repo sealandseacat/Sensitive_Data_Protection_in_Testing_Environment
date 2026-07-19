@@ -89,11 +89,15 @@ def _pick(dictionary: str, value: str, ctx: MaskContext) -> Optional[str]:
 
 
 def strat_fake_first_name(value, ctx: MaskContext):
+    if value is None:
+        return None  # a missing value stays missing; masking never invents data
     pick = _pick("first_names", value, ctx)
     return pick if pick is not None else strat_format_random(value, ctx)
 
 
 def strat_fake_last_name(value, ctx: MaskContext):
+    if value is None:
+        return None
     pick = _pick("last_names", value, ctx)
     return pick if pick is not None else strat_format_random(value, ctx)
 
@@ -109,6 +113,8 @@ def strat_fake_name(value, ctx: MaskContext):
 
 def strat_fake_city(value, ctx: MaskContext):
     """Replace a US city with another US city (requirement example)."""
+    if value is None:
+        return None
     pick = _pick("us_cities", value, ctx)
     return pick if pick is not None else strat_format_random(value, ctx)
 
@@ -130,6 +136,8 @@ def make_dictionary_strategy(dictionary: str) -> Strategy:
     """Build a strategy that replaces values from an arbitrary named dictionary."""
 
     def _strategy(value, ctx: MaskContext):
+        if value is None:
+            return None
         pick = _pick(dictionary, value, ctx)
         return pick if pick is not None else strat_format_random(value, ctx)
 

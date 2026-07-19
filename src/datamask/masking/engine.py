@@ -21,6 +21,7 @@ from datamask.masking.rules import (
     MaskContext,
     get_strategy,
 )
+from datamask.masking.seed_store import DEFAULT_SEED_MAP_URL, SeedStore
 
 
 @dataclass
@@ -45,12 +46,44 @@ class TableMaskResult:
 
 
 class MaskingEngine:
-    def __init__(self, config: MaskingConfig):
+    def __init__(self, config: MaskingConfig, seed_store: Optional[SeedStore] = None):
         self.config = config
         # Normalize per-column overrides to lowercase keys for matching.
         self._column_strategies = {
             k.lower(): v for k, v in (config.column_strategies or {}).items()
         }
+        # Seed map: durable (original -> masked) pair tracking. Supplying a store
+        # explicitly hands its lifecycle to the caller; otherwise the engine
+        # creates and closes its own.
+        self._seed_store = seed_store
+        self._owns_seed_store = seed_store is None
+        self._untracked = {
+            s.lower() for s in (config.seed_map.untracked_strategies or [])
+        }
+
+    # -- seed map -------------------------------------------------------------
+    def seed_store(self) -> Optional[SeedStore]:
+        """Return the connected seed store, or ``None`` when tracking is off.
+
+        Connects lazily so the engine works standalone (e.g. in examples/tests)
+        without callers having to remember an explicit open step.
+        """
+        if not self.config.seed_map.enabled:
+            return None
+        if self._seed_store is None:
+            self._seed_store = SeedStore(
+                url=self.config.seed_map.url or DEFAULT_SEED_MAP_URL,
+                salt=self.config.seed_map.salt,
+            )
+        if self._seed_store.engine is None:
+            self._seed_store.connect()
+        return self._seed_store
+
+    def close(self) -> None:
+        """Release the seed store if this engine created it."""
+        if self._seed_store is not None and self._owns_seed_store:
+            self._seed_store.close()
+            self._seed_store = None
 
     # -- planning -------------------------------------------------------------
     def resolve_strategy(self, decision: Decision) -> str:
@@ -107,9 +140,42 @@ class MaskingEngine:
 
     # -- value masking --------------------------------------------------------
     def mask_value(self, value, plan: ColumnPlan):
+        """Mask one value, reusing its tracked pair when the seed map is on.
+
+        Order of operations:
+          1. Look the value up in the seed map. A hit means this value was
+             masked before, so the recorded replacement is reused — that is what
+             keeps "Tesla always becomes Apple" true across runs, even if the
+             dictionaries or the seed have changed since.
+          2. On a miss, compute the replacement with the strategy and record the
+             new pair, which assigns it a seed token for future tracking.
+        """
         strategy = get_strategy(plan.strategy_name)
         ctx = MaskContext(column=plan.column, rule=plan.rule, seed=self.config.seed)
-        return strategy(value, ctx)
+
+        store = self.seed_store()
+        trackable = (
+            store is not None
+            and value is not None
+            and plan.strategy_name.lower() not in self._untracked
+        )
+        if not trackable:
+            return strategy(value, ctx)
+
+        # Pairs are scoped per strategy, so the same value masks identically in
+        # every column that uses that strategy (preserving joins across tables).
+        scope = plan.strategy_name
+        original = str(value)
+
+        recorded = store.lookup(scope, original)
+        if recorded is not None:
+            return recorded
+
+        masked = strategy(value, ctx)
+        if masked is None or masked == "":
+            return masked  # nothing meaningful to track
+        store.record(scope, original, str(masked), plan.strategy_name)
+        return masked
 
     def mask_row(self, row: dict, plans: list[ColumnPlan]) -> dict:
         masked = dict(row)

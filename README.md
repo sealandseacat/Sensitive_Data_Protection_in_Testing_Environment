@@ -33,6 +33,7 @@ exposes no one.
 | 5 | **Manual sensitivity toggles** — a YAML file lets you force any field sensitive or safe, overriding automation. | [`detection/overrides.py`](src/datamask/detection/overrides.py) |
 | 6 | **ETL / masking engine** — fake-value replacement (name→name, US city→US city), shuffle, format-preserving random, redaction, and null/blank. Format and length are preserved (a 6-char password → another 6-char string). | [`masking/`](src/datamask/masking) |
 | 7 | **Validation** — after masking, verify it worked: row counts match, schema elements match, and a row-based check proves every sensitive value was truly masked. | [`validation/`](src/datamask/validation) |
+| 8 | **Seed map** — every `original → masked` pair is recorded and given a seed token, so a value masks the same way forever, across tables, databases and future runs. On by default. | [`masking/seed_store.py`](src/datamask/masking/seed_store.py) |
 
 ---
 
@@ -154,8 +155,9 @@ datamask mask --config config/datamask.config.yaml --apply
 # 5. Validate — verify masking worked (needs source_database in the config)
 datamask validate --config config/datamask.config.yaml
 
-# Inspect recorded decisions / list strategies
+# Inspect recorded decisions / tracked pairs / list strategies
 datamask history --config config/datamask.config.yaml
+datamask seeds   --config config/datamask.config.yaml
 datamask strategies
 ```
 
@@ -202,10 +204,145 @@ A **strategy** is *how* a value gets scrambled. Built-ins:
 | `blank` | Set the column to an empty string |
 
 All strategies are **deterministic** (seeded), so the same input always maps to
-the same output — that is what keeps masked data referentially consistent.
+the same output — and the [seed map](#consistency--the-seed-map) records each
+pair so that stays true even when dictionaries or the seed change.
 
 Add your own with `register_strategy(...)`, and your own value lists with
 `register_dictionary(...)`.
+
+---
+
+## Consistency — the seed map
+
+Masked data is only useful if it is **consistent**: if `Tesla` becomes `Apple`,
+it must become `Apple` in every column, every table, and every future run.
+Otherwise joins break and last month's test database disagrees with this
+month's.
+
+`masking.seed` alone gets you *recomputability* — strategies derive their RNG
+from `sha256(seed + value)`, so the same input recomputes to the same output.
+But nothing is written down, which means the mapping quietly changes whenever
+its inputs do:
+
+| Change | Effect without the seed map |
+|--------|-----------------------------|
+| Someone sorts `us_cities.txt` | **every** mapping changes |
+| Someone appends one new city | some mappings shift |
+| `masking.seed` is edited | **every** mapping changes |
+
+The **seed map** fixes this by persisting the decision instead of recomputing
+it. The first time a value is masked, the pair is written down and assigned a
+**seed** — a short stable token identifying that pair. Every later run looks the
+pair up and reuses it.
+
+```mermaid
+flowchart LR
+    A["Value to mask<br/>(Tesla)"] --> B{"Seen before?<br/>(seed map lookup)"}
+    B -- "yes" --> C["Reuse recorded pair<br/>Tesla → Apple"]
+    B -- "no" --> D["Run the strategy<br/>Tesla → Apple"]
+    D --> E["Record pair + assign seed<br/>(9f2a…7c)"]
+    E --> C
+```
+
+```yaml
+masking:
+  seed_map:
+    enabled: true      # ON by default — set false for recompute-only behaviour
+    url:               # blank = sqlite:///datamask_seedmap.db
+    salt:              # see "Privacy" below
+    untracked_strategies: ["null", "blank", "redact"]
+```
+
+### How the seed is calculated
+
+The seed is **derived from the value, not invented at random** — that is the
+whole trick. Because the same value always fingerprints to the same seed, a
+future run can find the pair it belongs to without ever having stored the value
+itself:
+
+```
+fingerprint = sha256( salt | strategy | original_value )
+
+  value_hash = fingerprint              (full 64 hex chars — the lookup key)
+  seed       = fingerprint[:16]         (short token — how you refer to the pair)
+```
+
+Worked example, masking `Tesla` in a `fake_city` column:
+
+| Step | What happens |
+|------|--------------|
+| 1 | Fingerprint `Tesla` → `71d943727714753f…` (full hash) |
+| 2 | Look up that hash in the seed map → **miss**, first time seen |
+| 3 | Run the `fake_city` strategy → `Tucson` |
+| 4 | Store the row: `seed=71d943727714753f`, `scope=fake_city`, `value_hash=71d9…`, `masked=Tucson` |
+| 5 | **Next run**, `Tesla` fingerprints to `71d94372…` again → **hit** → return `Tucson` without running the strategy at all |
+
+Step 5 is why the mapping is stable. The strategy — and therefore the
+dictionary contents, the dictionary order, and `masking.seed` — is only ever
+consulted **once per distinct value, ever**. After that the recorded answer
+wins, so later changes to any of those inputs cannot move an existing pair.
+
+A few consequences worth knowing:
+
+- **The seed is an identifier, not a secret.** It is safe to quote in a ticket
+  or a log to refer to a specific pair. It reveals nothing on its own.
+- **The same value in two different strategies gets two different seeds**,
+  because the strategy name is part of the fingerprint. `Tesla` masked as a city
+  and `Tesla` masked as a name are separate pairs that cannot collide.
+- **Only the salt is sensitive.** Change it and every fingerprint changes, so
+  every existing pair becomes unreachable.
+- **New values are still free to appear.** A value never seen before simply
+  takes step 3 and becomes a new tracked pair; nothing has to be pre-registered.
+
+Inspect what has been tracked:
+
+```bash
+datamask seeds --config config/datamask.config.yaml
+```
+
+```
+Tracked pairs: 5
+
+SEED               SCOPE              MASKED VALUE
+71d943727714753f   fake_city          Tucson
+60e256a96b19d5d1   fake_city          Seattle
+```
+
+### Scope
+
+Pairs are namespaced **per strategy**, so a value masks identically in every
+column that uses that strategy — `Tesla` in `customers.company` and `Tesla` in
+`orders.vendor` both become the same thing, keeping joins intact.
+
+### Privacy
+
+**Original values are never stored.** The lookup key is a salted SHA-256 hash,
+so the store holds `hash(Tesla) → "Apple"`, never `"Tesla" → "Apple"`. You
+cannot read it to discover what a value became — only look up a value you
+already hold — so it is not a reversal table.
+
+One honest limit: by default the salt is generated once and kept *inside* the
+store, which is stable with zero configuration but means anyone holding the
+store also holds the salt. Since masked columns often draw on small, guessable
+value sets, such a holder could hash candidate values to test whether one is
+present. If that matters to you, set `salt` to an external secret:
+
+```yaml
+masking:
+  seed_map:
+    salt: ${DATAMASK_SEED_SALT}   # never written to disk
+```
+
+> ⚠️ Changing the salt **orphans every existing pair** — they can no longer be
+> found and values start mapping afresh. Pick it once and keep it with your
+> backups. The seed map database is itself worth backing up: lose it and future
+> runs will re-derive new mappings that disagree with already-masked databases.
+
+### Turning it off
+
+Set `masking.seed_map.enabled: false`. Masking stays deterministic within a run,
+but nothing is persisted and mappings revert to drifting whenever a dictionary
+or the seed changes.
 
 ### How is the masking rule chosen?
 
@@ -335,6 +472,7 @@ src/datamask/
 ├── history/             # decision store for consistency (feature #2)
 ├── llm/                 # OpenAI + local providers (feature #4)
 ├── masking/             # ETL engine, strategies, dictionaries (feature #6)
+│   └── seed_store.py    # seed map: durable original->masked pairs (feature #8)
 └── validation/          # post-masking checks: counts, schema, completeness (#7)
     ├── row_count.py            # check #1
     ├── schema_elements.py      # check #2

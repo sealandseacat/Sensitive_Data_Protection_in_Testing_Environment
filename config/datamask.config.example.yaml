@@ -67,6 +67,23 @@ masking:
   seed: datamask             # deterministic seed -> consistent, repeatable masking
   default_strategy: format_random   # used when a rule has no explicit mapping
 
+  # (0) SEED MAP — durable tracking of every (original -> masked) pair.
+  # `seed` above only makes masking *recomputable*. On its own, the mapping
+  # silently changes if a dictionary file is reordered/extended or the seed is
+  # changed — so a value masked as "Apple" last month could become "Ford" today.
+  # The seed map writes each pair down the first time it is seen and assigns it
+  # a seed token, then reuses it forever. That is what guarantees Tesla always
+  # masks to the same value across tables, databases and future runs.
+  #
+  # Originals are NEVER stored (the key is a salted hash), so this store cannot
+  # be used to reverse masking or re-identify anyone.
+  seed_map:
+    enabled: true            # ON by default; set false for recompute-only behaviour
+    url:                     # blank = sqlite:///datamask_seedmap.db; any SQLAlchemy URL works
+    # Strategies not worth tracking (constant or trivially derived output).
+    # Quoted because bare `null` is a YAML null, not the strategy named "null".
+    untracked_strategies: ["null", "blank", "redact"]
+
   # (A) HIGHEST priority — decide the strategy for a SPECIFIC column yourself.
   # This is where you choose, e.g., to BLANK a long free-text note instead of
   # randomizing it. Keys can be "column", "table.column" or "schema.table.column".

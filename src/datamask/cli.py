@@ -105,6 +105,43 @@ def history(config_path: str) -> None:
 
 
 @cli.command()
+@click.option("--config", "config_path", required=True, help="Path to config YAML.")
+@click.option("--limit", default=50, show_default=True, help="Max pairs to list.")
+@click.option("--json", "as_json", is_flag=True, help="Emit the pairs as JSON.")
+def seeds(config_path: str, limit: int, as_json: bool) -> None:
+    """Show the tracked (original -> masked) pairs in the seed map.
+
+    Original values are not stored — only a salted hash — so each pair is shown
+    by its seed token rather than the original value.
+    """
+    config = _load(config_path)
+    from datamask.masking.seed_store import DEFAULT_SEED_MAP_URL, SeedStore
+
+    seed_map = config.masking.seed_map
+    if not seed_map.enabled:
+        click.echo("Seed map is disabled in config (masking.seed_map.enabled: false).")
+        return
+
+    with SeedStore(
+        url=seed_map.url or DEFAULT_SEED_MAP_URL, salt=seed_map.salt
+    ) as store:
+        total = store.count()
+        pairs = store.all_pairs(limit=limit)
+
+    if as_json:
+        click.echo(json.dumps(pairs, indent=2, default=str))
+        return
+
+    click.echo(f"Tracked pairs: {total}")
+    if pairs:
+        click.echo(f"\n{'SEED':18} {'SCOPE':18} MASKED VALUE")
+        for p in pairs:
+            click.echo(f"{p['seed']:18} {p['scope']:18} {p['masked_value']}")
+    if total > len(pairs):
+        click.echo(f"\n... {total - len(pairs)} more (use --limit).")
+
+
+@cli.command()
 def strategies() -> None:
     """List the available masking strategies."""
     from datamask.masking.rules import STRATEGIES

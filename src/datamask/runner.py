@@ -58,6 +58,7 @@ class Runner:
         self.connector.close()
         if self.history is not None:
             self.history.close()
+        self.masker.close()
 
     def __enter__(self) -> "Runner":
         self.open()

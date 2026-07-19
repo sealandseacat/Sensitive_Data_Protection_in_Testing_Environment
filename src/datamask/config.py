@@ -96,6 +96,39 @@ class HistoryConfig:
 
 
 @dataclass
+class SeedMapConfig:
+    """Durable tracking of every (original -> masked) pair.
+
+    ``seed`` (below) only makes masking *recomputable*; the seed map makes it
+    *durable*. The first time a value is masked the pair is written down and
+    given a seed token, and every later run reuses it — so the mapping survives
+    dictionary edits, seed changes and upgrades that would otherwise silently
+    change what a value masks to.
+
+    Enabled by default. Set ``enabled: false`` to fall back to pure
+    recompute-on-the-fly behaviour (nothing is persisted).
+
+    Original values are never stored: the lookup key is a salted hash, so this
+    store cannot be used to reverse masking.
+    """
+
+    enabled: bool = True
+    # Where pairs are stored. Any SQLAlchemy URL; defaults to a local SQLite file.
+    url: Optional[str] = None
+    # Salt for the value hash. Leave unset and a random salt is generated once
+    # and kept inside the store (stable, zero-config). Set it to an external
+    # secret (e.g. ${DATAMASK_SEED_SALT}) so the salt never touches disk and the
+    # store alone cannot be brute-forced against guessable values.
+    # WARNING: changing this orphans every existing pair.
+    salt: Optional[str] = None
+    # Strategies whose output is constant or trivially derived, so tracking them
+    # would only add rows without protecting any mapping.
+    untracked_strategies: list[str] = field(
+        default_factory=lambda: ["null", "blank", "redact"]
+    )
+
+
+@dataclass
 class MaskingConfig:
     """ETL / masking behaviour."""
 
@@ -113,8 +146,15 @@ class MaskingConfig:
     # Deterministic seed so the same input always maps to the same output
     # (this is what keeps masking consistent across runs/tables).
     seed: Optional[str] = "datamask"
+    # Durable (original -> masked) pair tracking. On by default; see SeedMapConfig.
+    seed_map: SeedMapConfig = field(default_factory=SeedMapConfig)
     # If True, write masked values back; if False, only produce a report/preview.
     dry_run: bool = True
+
+    def __post_init__(self) -> None:
+        # Allow the nested block to arrive as a plain dict straight from YAML.
+        if isinstance(self.seed_map, dict):
+            self.seed_map = SeedMapConfig(**self.seed_map)
 
 
 @dataclass

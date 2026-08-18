@@ -7,9 +7,8 @@ transforms that data so it is safe to use in lower environments (dev, test,
 demos, analytics), and then **validates** that the masking actually worked — all
 while staying realistic and internally consistent.
 
-It is a ground-up, general-purpose rebuild of an internal company tool — with no
-proprietary endpoints, no hard-coded company rules, and support for any
-database.
+It is an independent, general-purpose implementation built from scratch —
+no proprietary code, no company-specific rules, and support for any database.
 
 ---
 

@@ -7,7 +7,7 @@ real value that also exists in the data. Example: the dictionary contains both
 and ``Apple`` -> ``Tesla``. The *column* still contains "Tesla" and "Apple", so a
 column-level check would wrongly scream "unmasked!". But the data **is** masked.
 
-The fix (from the original script): operate at the **row** level.
+The fix: operate at the **row** level.
 
   1. INTERSECT the sensitive column between source and target to get the set of
      **common values** (done in Python so it works across different databases).

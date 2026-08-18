@@ -2,8 +2,8 @@
 
 These small starter lists ship with the package so fake-value masking works out
 of the box. They are intentionally short — extend them, or register your own
-named dictionaries at runtime via :func:`register_dictionary`. The requirement
-example ("replace a US city with another US city") is satisfied by the
+named dictionaries at runtime via :func:`register_dictionary`. The classic
+example — replace a US city with another US city — is handled by the
 ``us_cities`` dictionary plus the consistent (seeded) chooser in ``rules.py``.
 """
 from __future__ import annotations

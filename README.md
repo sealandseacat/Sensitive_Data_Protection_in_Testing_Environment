@@ -28,7 +28,7 @@ exposes no one.
 | 1 | **Works with any database** — one SQLAlchemy-based connector drives PostgreSQL, MySQL/MariaDB, SQL Server, Oracle, SQLite, and more. | [`connectors/`](src/datamask/connectors) |
 | 2 | **Historical decisions** — every classification is saved and reused, so masking is reproducible and consistent across runs. | [`history/`](src/datamask/history) |
 | 3 | **Pattern matching** — data-driven heuristics (e.g. values containing `@` ≈ email) flag sensitive columns for free, with no LLM. | [`detection/patterns.py`](src/datamask/detection/patterns.py) |
-| 4 | **LLM fallback** — when patterns/history are inconclusive, optionally ask an LLM. Talk to OpenAI **or a fully local model** (Ollama/LM Studio) directly — no corporate wrapper. | [`llm/`](src/datamask/llm) |
+| 4 | **LLM fallback** — when patterns/history are inconclusive, optionally ask an LLM. Talk to OpenAI **or a fully local model** (Ollama/LM Studio) directly — no gateway required. | [`llm/`](src/datamask/llm) |
 | 5 | **Manual sensitivity toggles** — a YAML file lets you force any field sensitive or safe, overriding automation. | [`detection/overrides.py`](src/datamask/detection/overrides.py) |
 | 6 | **ETL / masking engine** — fake-value replacement (name→name, US city→US city), shuffle, format-preserving random, redaction, and null/blank. Format and length are preserved (a 6-char password → another 6-char string). | [`masking/`](src/datamask/masking) |
 | 7 | **Validation** — after masking, verify it worked: row counts match, schema elements match, and a row-based check proves every sensitive value was truly masked. | [`validation/`](src/datamask/validation) |
@@ -90,10 +90,10 @@ Here is what each piece does, in the order it gets used:
 | [`cli.py`](src/datamask/cli.py) | the **buttons** | Catches the command you type (`scan`, `mask`) and starts the job. |
 | [`config.py`](src/datamask/config.py) | the **settings reader** | Loads your settings file so passwords/options aren't hard-coded in the program. |
 | [`runner.py`](src/datamask/runner.py) | the **manager** | Coordinates everyone: connect → analyze each column → mask the sensitive ones. |
-| [`connectors/`](src/datamask/connectors) | the **database talker** | One worker that speaks to *any* database (Oracle, SQL Server, MySQL, Postgres…). Replaces the separate Oracle + SQL Server code from the old script. |
+| [`connectors/`](src/datamask/connectors) | the **database talker** | One worker that speaks to *any* database (Oracle, SQL Server, MySQL, Postgres…) through a single SQLAlchemy code path. |
 | [`detection/`](src/datamask/detection) | the **decision team** | Decides "is this column sensitive?" using your toggles, value patterns, memory, and (optionally) AI — in that order, stopping at the first confident answer. |
 | [`history/`](src/datamask/history) | the **memory** | Remembers past decisions so results stay consistent and runs get faster. |
-| [`llm/`](src/datamask/llm) | the **AI helper** | Only asked when everything else is unsure. Talks straight to OpenAI **or a private model on your own machine** — no company middle-man. |
+| [`llm/`](src/datamask/llm) | the **AI helper** | Only asked when everything else is unsure. Talks straight to OpenAI **or a private model on your own machine**. |
 | [`masking/`](src/datamask/masking) | the **scrambler** | Does the actual replacement (fake name, fake city, shuffle, blank, etc.), keeping the same shape and being consistent. |
 | [`validation/`](src/datamask/validation) | the **inspector** | After masking, double-checks the result: same row counts, same structure, and no sensitive value left behind. |
 
@@ -106,9 +106,9 @@ And the non-code support files:
 | [`tests/`](tests) | Automatic checks that prove everything still works. |
 | `pyproject.toml` / `requirements.txt` | The "shopping list" of tools it installs. |
 
-**The one-line summary:** instead of one giant file doing ten jobs, you now have
-eight small workers each doing one job — same idea as the original, just
-organized so anyone can reuse and upgrade it piece by piece.
+**The one-line summary:** instead of one giant script doing ten jobs, you have
+eight small workers each doing one job — organized so anyone can reuse and
+upgrade the toolkit piece by piece.
 
 ---
 

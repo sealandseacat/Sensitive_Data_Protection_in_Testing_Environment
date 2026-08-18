@@ -1,9 +1,8 @@
 """Manual field overrides — the "toggle which fields are sensitive" feature.
 
-This is requirement #4 (not present in the original script). A YAML file lets a
-human force a column to be treated as sensitive (with a specific rule) or
-explicitly mark it as safe, overriding every automatic layer. Overrides are
-matched in priority order:
+A YAML file lets a human force a column to be treated as sensitive (with a
+specific rule) or explicitly mark it as safe, overriding every automatic
+layer. Overrides are matched in priority order:
 
   1. exact ``schema.table.column``
   2. ``table.column``

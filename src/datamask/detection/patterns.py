@@ -1,11 +1,10 @@
 """Pattern-based sensitive-data detection.
 
-This layer is the open-source replacement for the company-specific regexes in
-the original script. Instead of guessing from *column names only*, each
-:class:`Pattern` inspects a sample of the actual values and reports how many of
-them match. A column is flagged when a high enough fraction matches.
+Instead of guessing from *column names only*, each :class:`Pattern` inspects a
+sample of the actual values and reports how many of them match. A column is
+flagged when a high enough fraction matches.
 
-The classic example from the requirements: values containing an ``@`` are very
+The classic example: values containing an ``@`` are very
 likely email addresses. Patterns are data-driven, easy to read, and trivial to
 extend — add your own by appending to ``DEFAULT_PATTERNS`` or passing custom
 patterns to :class:`PatternMatcher`.

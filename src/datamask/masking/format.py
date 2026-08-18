@@ -1,6 +1,6 @@
 """Format-preserving transformations.
 
-Requirement #5 stresses that replacements must keep the *shape* of the original
+Replacements must keep the *shape* of the original
 value: a 6-character password becomes another 6-character string, a digit stays
 a digit, a letter stays a letter, and separators (``-``, ``@``, spaces) are kept
 in place. These helpers provide that, driven by a seeded RNG so the mapping is

@@ -1,4 +1,4 @@
-"""Historical decision store — requirement #2.
+"""Historical decision store.
 
 Every decision the pipeline makes is persisted here. On later runs we *first*
 consult history: if a column was already classified, we reuse that decision

@@ -28,22 +28,21 @@ detection:
   sample_size: 100           # rows sampled per column for pattern matching
   use_patterns: true
   use_history: true
-  overrides_file: config/datamask.fields.yaml   # manual sensitive toggles (#4)
+  overrides_file: config/datamask.fields.yaml   # manual sensitive toggles
   # Optional: skip columns/tables purely by name (regex, case-insensitive).
-  # Left empty by default — these are NOT the company-specific rules from the
-  # old script; add your own only if you want name-based skipping.
+  # Left empty by default; add your own only if you want name-based skipping.
   skip_column_patterns: []   # e.g. [".*_id$", "^created_at$", "^updated_at$"]
   skip_table_patterns: []    # e.g. ["^tmp_", "_bkp$", "^audit_"]
 
-# --- 3. Historical decision store (#2) --------------------------------------
+# --- 3. Historical decision store -------------------------------------------
 # Past decisions are reused so masking stays consistent and runs get faster.
 history:
   enabled: true
   url: "sqlite:///datamask_history.db"   # any SQLAlchemy URL works
 
-# --- 4. LLM fallback (#4) — only used when patterns/history are inconclusive -
-# No corporate wrapper needed: talk to OpenAI directly, an OpenAI-compatible
-# gateway, or a fully local model (Ollama / LM Studio).
+# --- 4. LLM fallback — only used when patterns/history are inconclusive ------
+# Talk to OpenAI directly, an OpenAI-compatible gateway, or a fully local
+# model (Ollama / LM Studio).
 llm:
   enabled: false
   provider: openai           # openai | local
@@ -61,7 +60,7 @@ llm:
   # model: llama3
   # base_url: http://localhost:11434
 
-# --- 5. Masking / ETL (#5) --------------------------------------------------
+# --- 5. Masking / ETL --------------------------------------------------------
 masking:
   dry_run: true              # preview only; set false (or use `mask --apply`) to write
   seed: datamask             # deterministic seed -> consistent, repeatable masking

@@ -5,7 +5,7 @@ deterministic: a seeded RNG derived from the input guarantees the same source
 value always maps to the same masked value, which keeps referential consistency
 (e.g. the same customer name masks identically everywhere).
 
-Covered requirement #5 options:
+Built-in options:
   * fake-value replacement from dictionaries (names, cities, ...),
   * shuffle,
   * random characters (format-preserving),
@@ -112,7 +112,7 @@ def strat_fake_name(value, ctx: MaskContext):
 
 
 def strat_fake_city(value, ctx: MaskContext):
-    """Replace a US city with another US city (requirement example)."""
+    """Replace a US city with another US city."""
     if value is None:
         return None
     pick = _pick("us_cities", value, ctx)

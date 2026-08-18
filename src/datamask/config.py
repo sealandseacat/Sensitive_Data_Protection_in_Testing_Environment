@@ -81,7 +81,7 @@ class DetectionConfig:
     use_history: bool = True
     # Path to the field override file (sensitive/not-sensitive toggles).
     overrides_file: Optional[str] = None
-    # Skip columns/tables by name regex (rebuilt-from-scratch, fully optional).
+    # Skip columns/tables by name regex (fully optional).
     skip_column_patterns: list[str] = field(default_factory=list)
     skip_table_patterns: list[str] = field(default_factory=list)
 

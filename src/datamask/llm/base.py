@@ -1,9 +1,7 @@
 """Base classes and shared prompt for LLM-based detection.
 
-Unlike the original script — which had to call an internal corporate wrapper URL
-before reaching a model — providers here talk to standard endpoints directly:
-the official OpenAI API, any OpenAI-compatible gateway, or a local server such
-as Ollama / LM Studio. No proprietary middle-man.
+Providers talk to standard endpoints directly: the official OpenAI API, any
+OpenAI-compatible gateway, or a local server such as Ollama / LM Studio.
 """
 from __future__ import annotations
 

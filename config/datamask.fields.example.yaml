@@ -1,5 +1,5 @@
 # ============================================================================
-# Manual field overrides (requirement #4: "toggle which fields are sensitive")
+# Manual field overrides — toggle which fields are sensitive.
 # ----------------------------------------------------------------------------
 # Anything listed here OVERRIDES the automatic detection (patterns/LLM/history).
 # Match targets, most specific first:

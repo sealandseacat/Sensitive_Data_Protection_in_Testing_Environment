@@ -1,6 +1,6 @@
 """Heuristics for ignoring obvious test/placeholder values.
 
-Ported from the original validation script. These values (single characters,
+These values (single characters,
 repeated characters, keywords like ``test``/``n/a``) commonly appear identically
 in both source and target for legitimate reasons, so they would create noise in
 the masking-completeness check. They are filtered out before the expensive

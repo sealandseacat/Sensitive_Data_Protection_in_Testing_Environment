@@ -2,9 +2,8 @@
 
 Because it relies on SQLAlchemy's ``Inspector`` and the Core expression
 language, the *same code path* drives PostgreSQL, MySQL/MariaDB, SQL Server,
-Oracle, SQLite, and anything else with a SQLAlchemy dialect installed. This is
-how we satisfy requirement #1 ("handle all types of databases") without writing
-per-database SQL like the original script did.
+Oracle, SQLite, and anything else with a SQLAlchemy dialect installed — no
+per-database SQL required.
 """
 from __future__ import annotations
 

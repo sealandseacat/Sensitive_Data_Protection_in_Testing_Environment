@@ -1,5 +1,10 @@
 # dbmask
 
+[![CI](https://github.com/sealandseacat/dbmask/actions/workflows/ci.yml/badge.svg)](https://github.com/sealandseacat/dbmask/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/dbmask)](https://pypi.org/project/dbmask/)
+[![Python versions](https://img.shields.io/pypi/pyversions/dbmask)](https://pypi.org/project/dbmask/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **Discover, mask, and validate sensitive data in any database — for every
 environment your data flows to. Open source, for everyone.**
 

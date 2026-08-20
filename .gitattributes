@@ -1,0 +1,16 @@
+# Normalize all text files to LF in the repository. Checkouts get native
+# line endings according to each contributor's core.autocrlf/core.eol.
+* text=auto
+
+# Files that must always keep LF even on Windows checkouts (executed by
+# LF-sensitive tooling).
+*.sh text eol=lf
+
+# Explicitly-text project files (belt and braces on top of text=auto).
+*.py   text
+*.md   text
+*.txt  text
+*.yml  text
+*.yaml text
+*.toml text
+*.cfg  text

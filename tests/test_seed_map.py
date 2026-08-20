@@ -11,10 +11,10 @@ from pathlib import Path
 
 import pytest
 
-from datamask.config import MaskingConfig, SeedMapConfig
-from datamask.masking import dictionaries as dicts
-from datamask.masking.engine import ColumnPlan, MaskingEngine
-from datamask.masking.seed_store import SeedStore
+from dbmask.config import MaskingConfig, SeedMapConfig
+from dbmask.masking import dictionaries as dicts
+from dbmask.masking.engine import ColumnPlan, MaskingEngine
+from dbmask.masking.seed_store import SeedStore
 
 
 @pytest.fixture()
@@ -30,7 +30,7 @@ def restore_cities():
     dicts.register_dictionary("us_cities", original)
 
 
-def _engine(seed_url: str, enabled: bool = True, seed: str = "datamask") -> MaskingEngine:
+def _engine(seed_url: str, enabled: bool = True, seed: str = "dbmask") -> MaskingEngine:
     return MaskingEngine(
         MaskingConfig(
             seed=seed,
@@ -78,7 +78,7 @@ def test_pair_survives_dictionary_growth(seed_url, restore_cities):
 
 def test_pair_survives_global_seed_change(seed_url):
     """A changed masking.seed must not re-map values that are already tracked."""
-    engine = _engine(seed_url, seed="datamask")
+    engine = _engine(seed_url, seed="dbmask")
     first = engine.mask_value("Tesla", _plan())
     engine.close()
 

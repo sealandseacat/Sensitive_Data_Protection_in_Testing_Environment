@@ -19,13 +19,13 @@ env/
 htmlcov/
 
 # Local config (may contain credentials) — keep the *.example.yaml files
-config/datamask.config.yaml
-config/datamask.fields.yaml
+config/dbmask.config.yaml
+config/dbmask.fields.yaml
 
-# Local stores produced by running datamask
+# Local stores produced by running dbmask
 *.db
-datamask_history.db
-datamask_seedmap.db
+dbmask_history.db
+dbmask_seedmap.db
 
 # Editors / OS
 .vscode/

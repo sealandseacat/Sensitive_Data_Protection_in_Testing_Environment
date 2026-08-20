@@ -1,8 +1,8 @@
-# Sensitive_Data_Protection_in_Testing_Environment
+# dbmask
 
 **Discover and mask sensitive data in any database — open source, for everyone.**
 
-`datamask` scans a database, decides which columns hold sensitive data,
+`dbmask` scans a database, decides which columns hold sensitive data,
 transforms that data so it is safe to use in lower environments (dev, test,
 demos, analytics), and then **validates** that the masking actually worked — all
 while staying realistic and internally consistent.
@@ -15,7 +15,7 @@ no proprietary code, no company-specific rules, and support for any database.
 ## Why
 
 Teams constantly copy production data into test systems. That leaks names,
-emails, SSNs, and more. `datamask` finds the sensitive columns and rewrites
+emails, SSNs, and more. `dbmask` finds the sensitive columns and rewrites
 them with believable fakes (or nulls/blanks), so your test data looks real but
 exposes no one.
 
@@ -25,14 +25,14 @@ exposes no one.
 
 | # | Feature | Where |
 |---|---------|-------|
-| 1 | **Works with any database** — one SQLAlchemy-based connector drives PostgreSQL, MySQL/MariaDB, SQL Server, Oracle, SQLite, and more. | [`connectors/`](src/datamask/connectors) |
-| 2 | **Historical decisions** — every classification is saved and reused, so masking is reproducible and consistent across runs. | [`history/`](src/datamask/history) |
-| 3 | **Pattern matching** — data-driven heuristics (e.g. values containing `@` ≈ email) flag sensitive columns for free, with no LLM. | [`detection/patterns.py`](src/datamask/detection/patterns.py) |
-| 4 | **LLM fallback** — when patterns/history are inconclusive, optionally ask an LLM. Talk to OpenAI **or a fully local model** (Ollama/LM Studio) directly — no gateway required. | [`llm/`](src/datamask/llm) |
-| 5 | **Manual sensitivity toggles** — a YAML file lets you force any field sensitive or safe, overriding automation. | [`detection/overrides.py`](src/datamask/detection/overrides.py) |
-| 6 | **ETL / masking engine** — fake-value replacement (name→name, US city→US city), shuffle, format-preserving random, redaction, and null/blank. Format and length are preserved (a 6-char password → another 6-char string). | [`masking/`](src/datamask/masking) |
-| 7 | **Validation** — after masking, verify it worked: row counts match, schema elements match, and a row-based check proves every sensitive value was truly masked. | [`validation/`](src/datamask/validation) |
-| 8 | **Seed map** — every `original → masked` pair is recorded and given a seed token, so a value masks the same way forever, across tables, databases and future runs. On by default. | [`masking/seed_store.py`](src/datamask/masking/seed_store.py) |
+| 1 | **Works with any database** — one SQLAlchemy-based connector drives PostgreSQL, MySQL/MariaDB, SQL Server, Oracle, SQLite, and more. | [`connectors/`](src/dbmask/connectors) |
+| 2 | **Historical decisions** — every classification is saved and reused, so masking is reproducible and consistent across runs. | [`history/`](src/dbmask/history) |
+| 3 | **Pattern matching** — data-driven heuristics (e.g. values containing `@` ≈ email) flag sensitive columns for free, with no LLM. | [`detection/patterns.py`](src/dbmask/detection/patterns.py) |
+| 4 | **LLM fallback** — when patterns/history are inconclusive, optionally ask an LLM. Talk to OpenAI **or a fully local model** (Ollama/LM Studio) directly — no gateway required. | [`llm/`](src/dbmask/llm) |
+| 5 | **Manual sensitivity toggles** — a YAML file lets you force any field sensitive or safe, overriding automation. | [`detection/overrides.py`](src/dbmask/detection/overrides.py) |
+| 6 | **ETL / masking engine** — fake-value replacement (name→name, US city→US city), shuffle, format-preserving random, redaction, and null/blank. Format and length are preserved (a 6-char password → another 6-char string). | [`masking/`](src/dbmask/masking) |
+| 7 | **Validation** — after masking, verify it worked: row counts match, schema elements match, and a row-based check proves every sensitive value was truly masked. | [`validation/`](src/dbmask/validation) |
+| 8 | **Seed map** — every `original → masked` pair is recorded and given a seed token, so a value masks the same way forever, across tables, databases and future runs. On by default. | [`masking/seed_store.py`](src/dbmask/masking/seed_store.py) |
 
 ---
 
@@ -87,15 +87,15 @@ Here is what each piece does, in the order it gets used:
 
 | Piece | Think of it as... | What it does |
 |-------|-------------------|--------------|
-| [`cli.py`](src/datamask/cli.py) | the **buttons** | Catches the command you type (`scan`, `mask`) and starts the job. |
-| [`config.py`](src/datamask/config.py) | the **settings reader** | Loads your settings file so passwords/options aren't hard-coded in the program. |
-| [`runner.py`](src/datamask/runner.py) | the **manager** | Coordinates everyone: connect → analyze each column → mask the sensitive ones. |
-| [`connectors/`](src/datamask/connectors) | the **database talker** | One worker that speaks to *any* database (Oracle, SQL Server, MySQL, Postgres…) through a single SQLAlchemy code path. |
-| [`detection/`](src/datamask/detection) | the **decision team** | Decides "is this column sensitive?" using your toggles, value patterns, memory, and (optionally) AI — in that order, stopping at the first confident answer. |
-| [`history/`](src/datamask/history) | the **memory** | Remembers past decisions so results stay consistent and runs get faster. |
-| [`llm/`](src/datamask/llm) | the **AI helper** | Only asked when everything else is unsure. Talks straight to OpenAI **or a private model on your own machine**. |
-| [`masking/`](src/datamask/masking) | the **scrambler** | Does the actual replacement (fake name, fake city, shuffle, blank, etc.), keeping the same shape and being consistent. |
-| [`validation/`](src/datamask/validation) | the **inspector** | After masking, double-checks the result: same row counts, same structure, and no sensitive value left behind. |
+| [`cli.py`](src/dbmask/cli.py) | the **buttons** | Catches the command you type (`scan`, `mask`) and starts the job. |
+| [`config.py`](src/dbmask/config.py) | the **settings reader** | Loads your settings file so passwords/options aren't hard-coded in the program. |
+| [`runner.py`](src/dbmask/runner.py) | the **manager** | Coordinates everyone: connect → analyze each column → mask the sensitive ones. |
+| [`connectors/`](src/dbmask/connectors) | the **database talker** | One worker that speaks to *any* database (Oracle, SQL Server, MySQL, Postgres…) through a single SQLAlchemy code path. |
+| [`detection/`](src/dbmask/detection) | the **decision team** | Decides "is this column sensitive?" using your toggles, value patterns, memory, and (optionally) AI — in that order, stopping at the first confident answer. |
+| [`history/`](src/dbmask/history) | the **memory** | Remembers past decisions so results stay consistent and runs get faster. |
+| [`llm/`](src/dbmask/llm) | the **AI helper** | Only asked when everything else is unsure. Talks straight to OpenAI **or a private model on your own machine**. |
+| [`masking/`](src/dbmask/masking) | the **scrambler** | Does the actual replacement (fake name, fake city, shuffle, blank, etc.), keeping the same shape and being consistent. |
+| [`validation/`](src/dbmask/validation) | the **inspector** | After masking, double-checks the result: same row counts, same structure, and no sensitive value left behind. |
 
 And the non-code support files:
 
@@ -138,26 +138,26 @@ pip install -e ".[all]"
 
 ```bash
 # 1. Configure
-cp config/datamask.config.example.yaml config/datamask.config.yaml
-cp config/datamask.fields.example.yaml config/datamask.fields.yaml
-# edit config/datamask.config.yaml (DB connection, masking rules, ...)
+cp config/dbmask.config.example.yaml config/dbmask.config.yaml
+cp config/dbmask.fields.example.yaml config/dbmask.fields.yaml
+# edit config/dbmask.config.yaml (DB connection, masking rules, ...)
 
 # 2. Scan — classify every column (no data is changed)
-datamask scan --config config/datamask.config.yaml
+dbmask scan --config config/dbmask.config.yaml
 
 # 3. Preview masking (dry-run, nothing written)
-datamask mask --config config/datamask.config.yaml
+dbmask mask --config config/dbmask.config.yaml
 
 # 4. Apply masking (writes masked values back)
-datamask mask --config config/datamask.config.yaml --apply
+dbmask mask --config config/dbmask.config.yaml --apply
 
 # 5. Validate — verify masking worked (needs source_database in the config)
-datamask validate --config config/datamask.config.yaml
+dbmask validate --config config/dbmask.config.yaml
 
 # Inspect recorded decisions / tracked pairs / list strategies
-datamask history --config config/datamask.config.yaml
-datamask seeds   --config config/datamask.config.yaml
-datamask strategies
+dbmask history --config config/dbmask.config.yaml
+dbmask seeds   --config config/dbmask.config.yaml
+dbmask strategies
 ```
 
 Prefer code? See [`examples/quickstart.py`](examples/quickstart.py) for a
@@ -174,15 +174,15 @@ python examples/quickstart.py
 Two YAML files that work as a pair (the first points at the second). Secrets use
 `${ENV_VAR}` placeholders so you never commit credentials.
 
-- **[`config/datamask.config.yaml`](config/datamask.config.example.yaml)** — the
+- **[`config/dbmask.config.yaml`](config/dbmask.config.example.yaml)** — the
   main settings: database connection, detection tuning, history store, LLM
   settings, and masking rules. Answers *"how do I connect and how do I scramble?"*
-- **[`config/datamask.fields.yaml`](config/datamask.fields.example.yaml)** — your
+- **[`config/dbmask.fields.yaml`](config/dbmask.fields.example.yaml)** — your
   manual per-field overrides. Answers *"which columns are sensitive (or safe)?"*
   The main config references this file via `detection.overrides_file`.
 
 > The main config also has a `source_database:` and `validation:` section used
-> only by `datamask validate` (to compare the masked DB against the original).
+> only by `dbmask validate` (to compare the masked DB against the original).
 
 > Copy the bundled `*.example.yaml` files (drop the `.example`) to create your
 > own, then edit them.
@@ -247,7 +247,7 @@ flowchart LR
 masking:
   seed_map:
     enabled: true      # ON by default — set false for recompute-only behaviour
-    url:               # blank = sqlite:///datamask_seedmap.db
+    url:               # blank = sqlite:///dbmask_seedmap.db
     salt:              # see "Privacy" below
     untracked_strategies: ["null", "blank", "redact"]
 ```
@@ -296,7 +296,7 @@ A few consequences worth knowing:
 Inspect what has been tracked:
 
 ```bash
-datamask seeds --config config/datamask.config.yaml
+dbmask seeds --config config/dbmask.config.yaml
 ```
 
 ```
@@ -329,7 +329,7 @@ present. If that matters to you, set `salt` to an external secret:
 ```yaml
 masking:
   seed_map:
-    salt: ${DATAMASK_SEED_SALT}   # never written to disk
+    salt: ${DBMASK_SEED_SALT}   # never written to disk
 ```
 
 > ⚠️ Changing the salt **orphans every existing pair** — they can no longer be
@@ -387,18 +387,18 @@ masking:
 
 Because `column_strategies` wins, your `notes` choice overrides whatever the
 scanner guessed for that column. Everything else still follows the rule
-mappings. Run `datamask strategies` to see every available option.
+mappings. Run `dbmask strategies` to see every available option.
 
 ---
 
 ## Validation — did masking actually work?
 
 Masking is only trustworthy if you can prove it. After you mask, point
-`datamask validate` at **both** databases — the original (`source_database`) and
+`dbmask validate` at **both** databases — the original (`source_database`) and
 the masked one (`database`) — and it runs three independent checks:
 
 ```bash
-datamask validate --config config/datamask.config.yaml
+dbmask validate --config config/dbmask.config.yaml
 ```
 
 | # | Check | What it proves |
@@ -421,7 +421,7 @@ also exists in the data*:
 > and "Apple", so a column-level check screams "unmasked!" — but the data **is**
 > masked.
 
-So datamask checks at the **row** level instead:
+So dbmask checks at the **row** level instead:
 
 ```mermaid
 flowchart TD
@@ -447,9 +447,9 @@ engines (e.g. Oracle → PostgreSQL).
 ## Extending
 
 - **New data source** (REST API, Mongo, CSV lake): subclass
-  [`Connector`](src/datamask/connectors/base.py).
+  [`Connector`](src/dbmask/connectors/base.py).
 - **New detection pattern**: add a `Pattern` to
-  [`patterns.py`](src/datamask/detection/patterns.py).
+  [`patterns.py`](src/dbmask/detection/patterns.py).
 - **New masking rule**: `register_strategy("my_rule", fn)`.
 - **New fake dictionary**: `register_dictionary("countries", [...])`.
 
@@ -458,10 +458,10 @@ engines (e.g. Oracle → PostgreSQL).
 ## Project layout
 
 ```
-src/datamask/
+src/dbmask/
 ├── config.py            # YAML config schema + ${ENV} expansion
 ├── runner.py            # high-level orchestration (scan / mask)
-├── cli.py               # `datamask` command-line interface
+├── cli.py               # `dbmask` command-line interface
 ├── connectors/          # universal SQLAlchemy connector (feature #1)
 ├── detection/
 │   ├── patterns.py      # value-based heuristics (feature #3)

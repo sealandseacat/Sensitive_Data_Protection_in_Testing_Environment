@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "datamask"
+name = "dbmask"
 version = "0.1.0"
 description = "An open-source toolkit to discover and mask sensitive data in any database."
 readme = "README.md"
@@ -42,10 +42,10 @@ all = [
 dev = ["pytest>=7.4", "pytest-cov>=4.1"]
 
 [project.scripts]
-datamask = "datamask.cli:cli"
+dbmask = "dbmask.cli:cli"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-datamask = ["masking/dictionaries/data/*.txt"]
+dbmask = ["masking/dictionaries/data/*.txt"]

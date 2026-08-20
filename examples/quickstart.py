@@ -1,4 +1,4 @@
-"""End-to-end demo of datamask against a throwaway SQLite database.
+"""End-to-end demo of dbmask against a throwaway SQLite database.
 
 Run it with:  python examples/quickstart.py
 
@@ -11,7 +11,7 @@ import sqlite3
 import tempfile
 from pathlib import Path
 
-from datamask.config import (
+from dbmask.config import (
     Config,
     DatabaseConfig,
     DetectionConfig,
@@ -19,7 +19,7 @@ from datamask.config import (
     LLMConfig,
     MaskingConfig,
 )
-from datamask.runner import Runner
+from dbmask.runner import Runner
 
 
 def build_sample_db(path: Path) -> None:
@@ -45,7 +45,7 @@ def build_sample_db(path: Path) -> None:
 
 
 def main() -> None:
-    workdir = Path(tempfile.mkdtemp(prefix="datamask_demo_"))
+    workdir = Path(tempfile.mkdtemp(prefix="dbmask_demo_"))
     db_path = workdir / "demo.db"
     build_sample_db(db_path)
 

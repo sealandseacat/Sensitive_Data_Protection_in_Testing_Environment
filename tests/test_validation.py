@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from datamask.config import (
+from dbmask.config import (
     Config,
     DatabaseConfig,
     DetectionConfig,
@@ -19,9 +19,9 @@ from datamask.config import (
     MaskingConfig,
     ValidationConfig,
 )
-from datamask.connectors.sql import SQLConnector
-from datamask.validation.result import Status
-from datamask.validation.validator import Validator
+from dbmask.connectors.sql import SQLConnector
+from dbmask.validation.result import Status
+from dbmask.validation.validator import Validator
 
 
 def _make(path: Path, rows):
@@ -149,7 +149,7 @@ def test_runner_validate_end_to_end(tmp_path: Path, dbs):
             columns=["main.accounts.company"],
         ),
     )
-    from datamask.runner import Runner
+    from dbmask.runner import Runner
 
     with Runner(config) as runner:
         report = runner.validate()

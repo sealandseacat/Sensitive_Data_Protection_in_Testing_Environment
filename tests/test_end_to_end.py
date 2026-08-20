@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from datamask.config import (
+from dbmask.config import (
     Config,
     DatabaseConfig,
     DetectionConfig,
@@ -18,9 +18,9 @@ from datamask.config import (
     LLMConfig,
     MaskingConfig,
 )
-from datamask.masking.format import format_preserving_random, seeded_rng
-from datamask.masking.rules import MaskContext, get_strategy
-from datamask.runner import Runner
+from dbmask.masking.format import format_preserving_random, seeded_rng
+from dbmask.masking.rules import MaskContext, get_strategy
+from dbmask.runner import Runner
 
 
 @pytest.fixture()
@@ -145,8 +145,8 @@ def test_null_input_stays_null(strategy):
 
 
 def test_registered_dictionary_strategy_preserves_null():
-    from datamask.masking.dictionaries import register_dictionary
-    from datamask.masking.rules import make_dictionary_strategy
+    from dbmask.masking.dictionaries import register_dictionary
+    from dbmask.masking.rules import make_dictionary_strategy
 
     register_dictionary("countries", ["France", "Japan", "Brazil"])
     strategy = make_dictionary_strategy("countries")

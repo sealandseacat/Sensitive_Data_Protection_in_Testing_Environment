@@ -12,15 +12,28 @@ from functools import lru_cache
 from importlib import resources
 from typing import Sequence
 
-_DATA_PACKAGE = "dbmask.masking.dictionaries.data"
+# Anchor resource lookups on THIS package (it has an __init__.py, so it is a
+# regular package on every supported Python) and walk into data/ from there.
+# Anchoring on "…dictionaries.data" directly breaks on Python 3.9: data/ has no
+# __init__.py, so it imports as a namespace package whose spec.origin is None,
+# and 3.9's importlib.resources.files() fallback does pathlib.Path(None) ->
+# TypeError. Namespace-package support for files() only arrived in 3.10.
+_ANCHOR = __name__
 _CUSTOM: dict[str, list[str]] = {}
 
 
 @lru_cache(maxsize=None)
 def _load_bundled(name: str) -> tuple[str, ...]:
     try:
-        text = resources.files(_DATA_PACKAGE).joinpath(f"{name}.txt").read_text(encoding="utf-8")
-    except (FileNotFoundError, ModuleNotFoundError):
+        text = (
+            resources.files(_ANCHOR)
+            .joinpath("data")
+            .joinpath(f"{name}.txt")
+            .read_text(encoding="utf-8")
+        )
+    except FileNotFoundError:
+        # Unknown dictionary name: strategies treat an empty pool as "fall back
+        # to format-preserving random", so this is a soft miss by design.
         return tuple()
     return tuple(line.strip() for line in text.splitlines() if line.strip())
 

@@ -1,11 +1,13 @@
 # dbmask
 
-**Discover and mask sensitive data in any database — open source, for everyone.**
+**Discover, mask, and validate sensitive data in any database — for every
+environment your data flows to. Open source, for everyone.**
 
 `dbmask` scans a database, decides which columns hold sensitive data,
-transforms that data so it is safe to use in lower environments (dev, test,
-demos, analytics), and then **validates** that the masking actually worked — all
-while staying realistic and internally consistent.
+transforms that data so it is safe to use wherever it needs to go — dev and
+test systems, demos, analytics, vendor handoffs, AI pipelines — and then
+**validates** that the masking actually worked, all while staying realistic
+and internally consistent.
 
 It is an independent, general-purpose implementation built from scratch —
 no proprietary code, no company-specific rules, and support for any database.
@@ -14,10 +16,29 @@ no proprietary code, no company-specific rules, and support for any database.
 
 ## Why
 
-Teams constantly copy production data into test systems. That leaks names,
-emails, SSNs, and more. `dbmask` finds the sensitive columns and rewrites
-them with believable fakes (or nulls/blanks), so your test data looks real but
+Production data never stays in production. It gets copied into dev and test
+systems, demo environments, analytics warehouses, vendor handoffs, and —
+increasingly — AI/LLM workflows. Every copy widens the blast radius of a
+breach, and the regulations that matter (GDPR, CCPA, HIPAA, ...) do not care
+*which* environment leaked.
+
+Masking at the point of copy fixes this. `dbmask` finds the sensitive
+columns, rewrites them with believable fakes (or nulls/blanks), and then
+**proves the rewrite actually happened** — so every copy stays useful and
 exposes no one.
+
+---
+
+## Use cases
+
+| Where | What dbmask does there |
+|-------|------------------------|
+| **Dev & test** | Realistic, referentially-consistent test data with no real people in it — the classic case. |
+| **Demos & training** | Show real-looking data to prospects and new hires without showing real customers. |
+| **Analytics & BI** | Hand analysts production-shaped data with identities removed; the seed map keeps joins intact. |
+| **Vendor & partner handoffs** | Share reproducible datasets with third parties without sharing PII. |
+| **AI / LLM workflows** | Mask before data reaches prompts, fine-tuning sets, or vector stores. |
+| **Debugging on prod snapshots** | Reproduce production incidents on a masked copy instead of the real thing. |
 
 ---
 
@@ -487,6 +508,27 @@ src/dbmask/
   (or set `masking.dry_run: false`).
 - Always run against a **copy** of production data, never production itself.
 - Review the scan report and overrides before applying.
+
+---
+
+## Roadmap
+
+Where this is heading — shaped by the discussion in
+[#1](https://github.com/sealandseacat/dbmask/issues/1):
+
+- **Data-governance integration** — export classification results
+  (column → sensitivity → rule → decision source) in a standard format and
+  publish them to catalog/governance platforms (OpenMetadata, DataHub,
+  Collibra, ...), so dbmask's findings feed the tools organizations already
+  run instead of living in their own silo.
+- **Machine-readable reports** — JSON scan/validation output for CI gates
+  and audit trails.
+- **Performance** — bulk seed-map writes (today each new pair is written
+  individually).
+- **Coverage** — more built-in dictionaries and locales beyond the
+  US-centric starter lists, and a broader pattern catalogue.
+
+Suggestions and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 

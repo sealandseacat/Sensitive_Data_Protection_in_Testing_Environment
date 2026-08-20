@@ -8,6 +8,12 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Changed
+- **Repositioned the README** from test-data masking to what the engine
+  actually is: discovering, masking and validating sensitive data in any
+  database, for every environment production data flows to. Added use-cases
+  and roadmap sections (data-governance integration first among them).
+  Prompted by [#1](https://github.com/sealandseacat/dbmask/issues/1) —
+  thanks @dbwhizard.
 - **Renamed the package from `datamask` to `dbmask`.** The name `datamask`
   is already taken on PyPI by an existing project in the same space, so the
   package needed a new, non-colliding name before its first release.

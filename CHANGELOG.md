@@ -7,6 +7,12 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.0] - 2026-08-20
+
+First public release.
+
 ### Changed
 - **Repositioned the README** from test-data masking to what the engine
   actually is: discovering, masking and validating sensitive data in any
@@ -26,12 +32,15 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 
 ### Fixed
 - **Masking tables larger than one batch no longer fails with
-  `database is locked` on SQLite.** The engine used to stream-read the table
+  `database is locked` on SQLite**
+  ([#2](https://github.com/sealandseacat/dbmask/issues/2)).
+  The engine used to stream-read the table
   while writing batches back on a second connection; the in-flight read held
   a SHARED lock that blocked every write commit. Applies now read one page,
   write it back, then read the next.
 - **Bundled dictionaries crashed on Python 3.9** (`TypeError` from
-  `importlib.resources.files()` anchored on a namespace package). Resource
+  `importlib.resources.files()` anchored on a namespace package;
+  [#3](https://github.com/sealandseacat/dbmask/issues/3)). Resource
   loading is now anchored on a regular package and works on all supported
   Pythons (3.9–3.14). Loader breakage now also fails loudly instead of
   silently degrading every fake name to the same fallback value.
@@ -44,4 +53,5 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
   validation with `twine check --strict` on every push and pull request.
 - `CONTRIBUTING.md`, `SECURITY.md`, and this changelog.
 
-[Unreleased]: https://github.com/sealandseacat/dbmask/commits/main
+[Unreleased]: https://github.com/sealandseacat/dbmask/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/sealandseacat/dbmask/releases/tag/v0.1.0

@@ -17,6 +17,7 @@ from sqlalchemy import (
     inspect,
     select,
     and_,
+    or_,
 )
 from sqlalchemy.engine import Engine
 
@@ -133,6 +134,74 @@ class SQLConnector(Connector):
             for partition in result.partitions(batch_size):
                 for row in partition:
                     yield dict(row._mapping)
+
+    def iter_pages(
+        self,
+        schema: str,
+        table: str,
+        key_columns: list[str],
+        columns: Optional[list[str]] = None,
+        batch_size: int = 1000,
+    ) -> Iterable[list[dict]]:
+        """Read the table in key-ordered pages (keyset pagination).
+
+        Each page is fully fetched on its own short-lived connection, and that
+        connection is closed *before* the page is yielded. Nothing is held
+        open between pages, so the caller can freely write back to the same
+        table while iterating — with a streaming read that would deadlock on
+        databases where readers block writers (SQLite: the in-flight SELECT
+        holds a SHARED lock, so the writer's COMMIT times out with "database
+        is locked" as soon as a table spans more than one batch).
+
+        Keyset (``WHERE key > last ORDER BY key LIMIT n``) is used instead of
+        OFFSET/LIMIT so every page costs the same on large tables, and the
+        scan stays correct while non-key columns are being updated between
+        pages. Key columns are assumed non-NULL and immutable during the run —
+        true for primary keys, which is what the engine passes in.
+        """
+        if not key_columns:
+            raise ValueError(
+                f"Cannot page through {schema}.{table}: no key columns available. "
+                "Provide a primary key or specify key columns explicitly."
+            )
+        tbl = self._reflect(schema, table)
+        key_cols = [tbl.c[k] for k in key_columns]
+        if columns:
+            # Key columns must ride along or the keyset cannot advance.
+            selected = list(dict.fromkeys([*columns, *key_columns]))
+            cols = [tbl.c[c] for c in selected]
+        else:
+            cols = list(tbl.c)
+        engine = self._require_engine()
+
+        last: Optional[tuple] = None
+        while True:
+            stmt = select(*cols).order_by(*key_cols).limit(batch_size)
+            if last is not None:
+                stmt = stmt.where(self._keyset_after(key_cols, last))
+            with engine.connect() as conn:
+                page = [dict(r._mapping) for r in conn.execute(stmt).fetchall()]
+            if not page:
+                return
+            last = tuple(page[-1][k] for k in key_columns)
+            yield page
+            if len(page) < batch_size:
+                return
+
+    @staticmethod
+    def _keyset_after(key_cols: list, last: tuple):
+        """Row-value ``(k1, k2, ...) > (v1, v2, ...)`` written out longhand.
+
+        Expanded to ``k1 > v1 OR (k1 = v1 AND k2 > v2) OR ...`` because not
+        every dialect supports native row-value comparison (SQL Server, older
+        SQLite builds).
+        """
+        clauses = []
+        for i, col in enumerate(key_cols):
+            clauses.append(
+                and_(*[key_cols[j] == last[j] for j in range(i)], col > last[i])
+            )
+        return or_(*clauses)
 
     def update_rows(
         self, schema: str, table: str, key_columns: list[str], rows: list[dict]

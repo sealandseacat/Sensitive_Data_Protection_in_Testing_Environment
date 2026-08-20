@@ -68,6 +68,38 @@ class Connector(ABC):
     ) -> int:
         """Write masked rows back. Returns number of affected rows."""
 
+    def iter_pages(
+        self,
+        schema: str,
+        table: str,
+        key_columns: list[str],
+        columns: Optional[list[str]] = None,
+        batch_size: int = 1000,
+    ) -> Iterable[list[dict]]:
+        """Yield rows in pages (lists of dicts) for read-then-write ETL.
+
+        The masking engine writes each page back to the *same table* before
+        asking for the next one, so implementations for transactional stores
+        must not keep a read transaction or live cursor open across the
+        ``yield`` — on SQLite, for example, an open reader blocks the writer's
+        commit and the run dies with "database is locked". See
+        :meth:`dbmask.connectors.sql.SQLConnector.iter_pages` for the
+        reference implementation (keyset pagination, one short-lived
+        connection per page).
+
+        This default simply chunks :meth:`iter_rows` and is only suitable for
+        connectors whose reads cannot block their writes (REST APIs, files,
+        ...).
+        """
+        page: list[dict] = []
+        for row in self.iter_rows(schema, table, columns=columns, batch_size=batch_size):
+            page.append(row)
+            if len(page) >= batch_size:
+                yield page
+                page = []
+        if page:
+            yield page
+
     @abstractmethod
     def primary_key_columns(self, schema: str, table: str) -> list[str]:
         ...

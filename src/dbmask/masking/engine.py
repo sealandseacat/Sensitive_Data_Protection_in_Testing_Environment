@@ -202,11 +202,9 @@ class MaskingEngine:
 
         keys = key_columns or connector.primary_key_columns(schema, table)
 
-        batch: list[dict] = []
-        for row in connector.iter_rows(schema, table, batch_size=batch_size):
+        def _process(row: dict) -> dict:
             result.rows_scanned += 1
             masked = self.mask_row(row, plans)
-
             if len(result.preview) < preview_limit:
                 result.preview.append(
                     {
@@ -214,14 +212,24 @@ class MaskingEngine:
                         "after": {p.column: masked.get(p.column) for p in plans},
                     }
                 )
+            return masked
 
-            if not self.config.dry_run:
-                batch.append(masked)
-                if len(batch) >= batch_size:
-                    result.rows_written += connector.update_rows(schema, table, keys, batch)
-                    batch.clear()
+        if self.config.dry_run:
+            # Read-only: a single streaming pass is safe (and works on tables
+            # without a primary key, since nothing is written back).
+            for row in connector.iter_rows(schema, table, batch_size=batch_size):
+                _process(row)
+            return result
 
-        if not self.config.dry_run and batch:
+        # Apply mode: read one page, then write it back, then read the next.
+        # Reads and writes never overlap — interleaving writes into a live
+        # streaming read used to deadlock databases whose readers block
+        # writers (on SQLite the run died with "database is locked" as soon
+        # as a table exceeded one batch).
+        for page in connector.iter_pages(
+            schema, table, key_columns=keys, batch_size=batch_size
+        ):
+            batch = [_process(row) for row in page]
             result.rows_written += connector.update_rows(schema, table, keys, batch)
 
         return result

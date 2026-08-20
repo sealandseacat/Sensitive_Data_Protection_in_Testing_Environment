@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,10 +7,28 @@ name = "dbmask"
 version = "0.1.0"
 description = "An open-source toolkit to discover and mask sensitive data in any database."
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.9"
 authors = [{ name = "Siyuan Feng", email = "sealseacat@gmail.com" }]
-keywords = ["data-masking", "pii", "anonymization", "etl", "privacy", "gdpr"]
+keywords = ["data-masking", "pii", "anonymization", "etl", "privacy", "gdpr", "test-data"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Database",
+    "Topic :: Security",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
 
 # Core dependencies are intentionally light. Database drivers and LLM SDKs are
 # optional extras so users only install what they actually need.
@@ -19,6 +37,12 @@ dependencies = [
     "PyYAML>=6.0",
     "click>=8.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/sealandseacat/dbmask"
+Repository = "https://github.com/sealandseacat/dbmask"
+Issues = "https://github.com/sealandseacat/dbmask/issues"
+Changelog = "https://github.com/sealandseacat/dbmask/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 # Database drivers (install the one(s) you need)
@@ -48,4 +72,4 @@ dbmask = "dbmask.cli:cli"
 where = ["src"]
 
 [tool.setuptools.package-data]
-dbmask = ["masking/dictionaries/data/*.txt"]
+dbmask = ["py.typed", "masking/dictionaries/data/*.txt"]
